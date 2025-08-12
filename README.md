@@ -4,6 +4,8 @@
 
 ![界面](assets/main.png)
 
+![操作流程](assets/main.gif)
+
 ## 快速开始
 
 1. 安装依赖：
