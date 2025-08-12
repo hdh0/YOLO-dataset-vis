@@ -1,0 +1,78 @@
+name: 打包
+
+on:
+  push:
+    branches: [ master, main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip' # 这个是 pip 的缓存，保持不变
+
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        echo "安装的包列表:"
+        pip list
+
+    - name: 执行打包
+      run: |
+        echo "开始打包..."
+        pyinstaller -F -w -n YOLO数据集可视化 -i assets/logo.png main.py
+        echo "打包完成."
+      shell: cmd
+      timeout-minutes: 120
+
+    - name: 详细检查打包结果
+      run: |
+        echo "检查 dist 目录:"
+        if (Test-Path "dist") {
+          dir dist -Recurse
+        } else {
+          echo "dist 目录不存在"
+          exit 1
+        }
+
+    - name: 打包成 ZIP
+      run: |
+        if (Test-Path "dist") {
+          echo "正在打包 dist 目录..."
+          Compress-Archive -Path "dist\*" -DestinationPath "YOLO数据集可视化-v1.${{ github.run_number }}.zip" -Force
+          
+          $zipInfo = Get-Item "YOLO数据集可视化-v1.${{ github.run_number }}.zip"
+          echo "ZIP 文件大小: $([math]::Round($zipInfo.Length / 1MB, 2)) MB"
+        } else {
+          echo "错误: 找不到 dist 目录"
+          exit 1
+        }
+
+    - name: 创建 Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.${{ github.run_number }}
+        name: YOLO数据集可视化 v1.${{ github.run_number }}
+        body: |
+          ## YOLO数据集可视化 自动构建版本
+          
+          **构建信息**: 提交 `${{ github.sha }}` | 构建 #${{ github.run_number }}
+        files: |
+          YOLO数据集可视化-v1.${{ github.run_number }}.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
