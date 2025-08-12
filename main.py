@@ -9,10 +9,13 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
+
+matplotlib.use('TkAgg')  # 使用Tkinter
 
 # 设置matplotlib中文字体
 def setup_chinese_font():
@@ -509,12 +512,13 @@ class AnnotationVisualizer:
             self.ax.axis('off')
             self.canvas.draw()
             self.pending_update = None
-            return
-        # 预加载相邻
+            return        # 预加载相邻
         self.preload_images(self.current_index)
         h, w = image.shape[:2]
         self.ax.clear()
-        self.ax.imshow(image)
+        # 将BGR转换为RGB用于matplotlib显示
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        self.ax.imshow(image_rgb)
         self.ax.set_title(f"{current_image.name} ({self.current_index + 1}/{len(self.image_list)})" + (" [预览]" if fast else ""))
         self.ax.axis('off')
         annotations = []
